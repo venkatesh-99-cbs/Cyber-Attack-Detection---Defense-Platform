@@ -1,0 +1,25 @@
+# Local runtime data
+data/
+
+# Environment variables
+.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Test/cache files
+.pytest_cache/
+.coverage
+
+# SQLite database
+*.db
+*.sqlite
+*.sqlite3
+# Local runtime data
+data/
