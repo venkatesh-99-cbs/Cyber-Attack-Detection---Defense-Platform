@@ -1,11 +1,16 @@
 from datetime import datetime, timezone
 from typing import Generator
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from BlueTeam.api.schemas.event import SecurityEvent
+from BlueTeam.api.schemas.event import (
+    EventListResponse,
+    SecurityEvent,
+    SecurityEventResponse,
+)
 from BlueTeam.database.database import SessionLocal
 from BlueTeam.database.models.event import SecurityEventModel
 from BlueTeam.ingestion.processor import default_pipeline_processor
@@ -66,3 +71,49 @@ async def ingest_event(event: SecurityEvent, db: Session = Depends(get_db)):
         "id": db_event.id,
         "received_at": db_event.received_at.isoformat(),
     }
+
+
+@router.get("/events", response_model=EventListResponse)
+def get_events(
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve paginated security events from SQLite database.
+
+    - Ordered by event ID descending (most recent first).
+    """
+    total = db.query(func.count(SecurityEventModel.id)).scalar() or 0
+    db_events = (
+        db.query(SecurityEventModel)
+        .order_by(SecurityEventModel.id.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+    events = [
+        SecurityEventResponse(
+            id=e.id,
+            event_id=e.event_id,
+            timestamp=e.timestamp,
+            source_ip=e.source_ip,
+            target_ip=e.target_ip,
+            event_type=e.event_type,
+            endpoint=e.endpoint,
+            method=e.method,
+            status_code=e.status_code,
+            message=e.message,
+            metadata=e.metadata_ or {},
+            received_at=e.received_at,
+        )
+        for e in db_events
+    ]
+
+    return EventListResponse(
+        total=total,
+        limit=limit,
+        offset=offset,
+        events=events,
+    )

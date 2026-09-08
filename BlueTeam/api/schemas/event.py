@@ -22,3 +22,33 @@ class SecurityEvent(BaseModel):
     status_code: int | None = None
     message: str = Field(..., min_length=1)
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class SecurityEventResponse(BaseModel):
+    """
+    Security event response model representing a persisted record from database.
+    """
+
+    id: int
+    event_id: str
+    timestamp: datetime
+    source_ip: str
+    target_ip: str
+    event_type: str
+    endpoint: str | None = None
+    method: str | None = None
+    status_code: int | None = None
+    message: str
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    received_at: datetime
+
+
+class EventListResponse(BaseModel):
+    """
+    Paginated security event list container.
+    """
+
+    total: int
+    limit: int
+    offset: int
+    events: list[SecurityEventResponse]

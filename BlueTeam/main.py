@@ -4,7 +4,8 @@ from fastapi import FastAPI
 
 from BlueTeam.database.database import init_db
 from BlueTeam.database.models import event as _event_model  # noqa: F401 – registers ORM model
-from BlueTeam.api.routes import health, events, websocket
+from BlueTeam.api.routes import health, events, websocket, dashboard, alerts, incidents
+
 
 
 @asynccontextmanager
@@ -24,3 +25,6 @@ app = FastAPI(
 app.include_router(health.router, tags=["Health"])
 app.include_router(events.router, tags=["Events"])
 app.include_router(websocket.router, tags=["WebSocket"])
+app.include_router(dashboard.router, tags=["Dashboard"])
+app.include_router(alerts.router, tags=["Alerts"])
+app.include_router(incidents.router, tags=["Incidents"])
