@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from BlueTeam.api.schemas.event import SecurityEvent
 from BlueTeam.database.database import SessionLocal
 from BlueTeam.database.models.event import SecurityEventModel
+from BlueTeam.ingestion.processor import default_pipeline_processor
 
 router = APIRouter()
 
@@ -22,13 +23,14 @@ def get_db() -> Generator[Session, None, None]:
 
 
 @router.post("/events", status_code=status.HTTP_201_CREATED)
-def ingest_event(event: SecurityEvent, db: Session = Depends(get_db)):
+async def ingest_event(event: SecurityEvent, db: Session = Depends(get_db)):
     """
     Receive a security event from the Target application.
 
     - Validates the payload using the SecurityEvent Pydantic schema.
     - Persists the event to the SQLite security_events table.
     - Returns 409 Conflict if the event_id already exists.
+    - Executes Detection -> Risk -> Alert -> WebSocket broadcast pipeline.
     - Returns 201 Created on success.
     """
     db_event = SecurityEventModel(
@@ -54,6 +56,9 @@ def ingest_event(event: SecurityEvent, db: Session = Depends(get_db)):
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Event with event_id '{event.event_id}' already exists.",
         )
+
+    # Execute Detection -> Risk -> Alert -> WebSocket pipeline safely
+    await default_pipeline_processor.process_and_broadcast(event, db)
 
     return {
         "status": "accepted",
