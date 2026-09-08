@@ -18,3 +18,5 @@ env/
 *.db
 *.sqlite
 *.sqlite3
+# Local runtime data
+data/
