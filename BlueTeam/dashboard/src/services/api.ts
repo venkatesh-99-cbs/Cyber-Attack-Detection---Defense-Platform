@@ -91,4 +91,28 @@ export const apiService = {
       };
     }
   },
+
+  async fetchValidations(): Promise<any[]> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/validation`);
+      return await handleResponse<any[]>(res);
+    } catch (err) {
+      console.warn('Validation list fetch failed:', err);
+      return [];
+    }
+  },
+
+  async createValidation(eventId: string, expected?: any): Promise<any> {
+    const res = await fetch(`${API_BASE_URL}/validation`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event_id: eventId, expected }),
+    });
+    return await handleResponse<any>(res);
+  },
+
+  async fetchReplay(validationId: string): Promise<any> {
+    const res = await fetch(`${API_BASE_URL}/validation/${validationId}/replay`);
+    return await handleResponse<any>(res);
+  },
 };

@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from BlueTeam.database.database import init_db
 from BlueTeam.database.models import event as _event_model  # noqa: F401 – registers ORM model
-from BlueTeam.api.routes import health, events, websocket, dashboard, alerts, incidents
+from BlueTeam.api.routes import health, events, websocket, dashboard, alerts, incidents, validation
 
 
 @asynccontextmanager
@@ -39,3 +39,4 @@ app.include_router(websocket.router, tags=["WebSocket"])
 app.include_router(dashboard.router, tags=["Dashboard"])
 app.include_router(alerts.router, tags=["Alerts"])
 app.include_router(incidents.router, tags=["Incidents"])
+app.include_router(validation.router, tags=["Validation"])

@@ -6,6 +6,7 @@ from BlueTeam.database.models.lifecycle import (
     IncidentRecord,
     ResponseRecord,
 )
+from BlueTeam.database.models.validation import ValidationRecord
 
 __all__ = [
     "SecurityEventModel",
@@ -14,5 +15,7 @@ __all__ = [
     "AlertRecord",
     "IncidentRecord",
     "ResponseRecord",
+    "ValidationRecord",
 ]
+
 
