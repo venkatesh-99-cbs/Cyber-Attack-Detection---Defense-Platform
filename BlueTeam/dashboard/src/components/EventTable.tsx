@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Database, Search, Filter, ChevronLeft, ChevronRight, Eye, RefreshCw } from 'lucide-react';
+import { Database, Search, Filter, ChevronLeft, ChevronRight, Eye, RefreshCw, AlertCircle } from 'lucide-react';
 import { SecurityEvent } from '../types/event';
 
 interface EventTableProps {
@@ -53,7 +53,7 @@ export const EventTable: React.FC<EventTableProps> = ({
         <div className="flex items-center space-x-2">
           <Database className="w-4 h-4 text-sky-400" />
           <h3 className="text-xs font-bold font-mono text-slate-200 uppercase tracking-wider">
-            Security Event Logs
+            Security Event Telemetry Logs
           </h3>
           <span className="bg-slate-800 text-slate-300 border border-slate-700 text-[10px] font-mono px-2 py-0.5 rounded font-medium">
             {total} Total
@@ -110,19 +110,20 @@ export const EventTable: React.FC<EventTableProps> = ({
         <table className="w-full text-left border-collapse text-xs font-mono">
           <thead>
             <tr className="bg-soc-bg/80 text-soc-textMuted border-b border-soc-border uppercase text-[10px] tracking-wider select-none">
-              <th className="py-2.5 px-3">ID</th>
-              <th className="py-2.5 px-3">Timestamp</th>
+              <th className="py-2.5 px-3">Time</th>
               <th className="py-2.5 px-3">Event Type</th>
               <th className="py-2.5 px-3">Source IP</th>
               <th className="py-2.5 px-3">Target IP</th>
-              <th className="py-2.5 px-3">Endpoint / Details</th>
+              <th className="py-2.5 px-3">Endpoint</th>
+              <th className="py-2.5 px-3">Status</th>
+              <th className="py-2.5 px-3">Detection Context</th>
               <th className="py-2.5 px-3 text-right">Inspect</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-soc-borderMuted">
             {filteredEvents.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-10 px-4 text-soc-textMuted">
+                <td colSpan={8} className="text-center py-10 px-4 text-soc-textMuted">
                   <div className="flex flex-col items-center justify-center space-y-2">
                     <Database className="w-6 h-6 text-slate-600" />
                     <p className="text-xs font-mono text-slate-300">
@@ -137,62 +138,79 @@ export const EventTable: React.FC<EventTableProps> = ({
                 </td>
               </tr>
             ) : (
-              filteredEvents.map((evt) => (
-                <tr
-                  key={evt.event_id}
-                  className="hover:bg-soc-card/70 transition-colors group"
-                >
-                  <td className="py-2.5 px-3 text-slate-400 font-mono text-[11px]">
-                    #{evt.id ?? '-'}
-                  </td>
-                  <td className="py-2.5 px-3 text-slate-300 whitespace-nowrap">
-                    {new Date(evt.timestamp).toLocaleString()}
-                  </td>
-                  <td className="py-2.5 px-3 whitespace-nowrap">
-                    <span className="bg-slate-800 text-sky-300 px-2 py-0.5 rounded text-[11px] font-mono border border-slate-700">
-                      {evt.event_type}
-                    </span>
-                  </td>
-                  <td className="py-2.5 px-3 text-slate-200 whitespace-nowrap font-medium">
-                    {evt.source_ip}
-                  </td>
-                  <td className="py-2.5 px-3 text-slate-400 whitespace-nowrap">
-                    {evt.target_ip}
-                  </td>
-                  <td className="py-2.5 px-3 text-slate-300 max-w-xs truncate">
-                    {evt.endpoint ? (
-                      <span className="space-x-1.5">
-                        {evt.method && (
-                          <span className="text-[10px] text-slate-400 font-bold bg-slate-900 px-1 py-0.2 rounded border border-slate-800">
-                            {evt.method}
-                          </span>
-                        )}
-                        <span className="text-slate-200">{evt.endpoint}</span>
-                        {evt.status_code !== undefined && evt.status_code !== null && (
-                          <span className={`text-[10px] px-1 py-0.2 rounded border ${
-                            evt.status_code >= 400
-                              ? 'text-rose-400 border-rose-500/30 bg-rose-950/40'
-                              : 'text-emerald-400 border-emerald-500/30 bg-emerald-950/40'
-                          }`}>
-                            {evt.status_code}
-                          </span>
-                        )}
+              filteredEvents.map((evt) => {
+                // Check if target or blue team metadata identifies an attack pattern
+                const targetAttackType = evt.metadata?.target_attack_type || evt.metadata?.attack_type;
+                const statusCode = evt.status_code;
+
+                return (
+                  <tr
+                    key={evt.event_id}
+                    className="hover:bg-soc-card/70 transition-colors group"
+                  >
+                    <td className="py-2.5 px-3 text-slate-300 whitespace-nowrap">
+                      {new Date(evt.timestamp).toLocaleTimeString()}
+                    </td>
+                    <td className="py-2.5 px-3 whitespace-nowrap">
+                      <span className="bg-slate-800 text-sky-300 px-2 py-0.5 rounded text-[11px] font-mono border border-slate-700 font-medium">
+                        {evt.event_type}
                       </span>
-                    ) : (
-                      <span className="text-slate-400 truncate">{evt.message}</span>
-                    )}
-                  </td>
-                  <td className="py-2.5 px-3 text-right whitespace-nowrap">
-                    <button
-                      onClick={() => onSelectEvent && onSelectEvent(evt)}
-                      className="inline-flex items-center space-x-1 text-[11px] font-mono text-sky-400 hover:text-sky-300 bg-slate-800/80 hover:bg-slate-800 px-2.5 py-1 rounded border border-slate-700 transition-colors"
-                    >
-                      <Eye className="w-3 h-3" />
-                      <span>Inspect</span>
-                    </button>
-                  </td>
-                </tr>
-              ))
+                    </td>
+                    <td className="py-2.5 px-3 text-amber-300 whitespace-nowrap font-medium">
+                      {evt.source_ip}
+                    </td>
+                    <td className="py-2.5 px-3 text-slate-300 whitespace-nowrap">
+                      {evt.target_ip}
+                    </td>
+                    <td className="py-2.5 px-3 text-slate-200 max-w-xs truncate">
+                      {evt.endpoint ? (
+                        <span className="space-x-1.5">
+                          {evt.method && (
+                            <span className="text-[10px] text-slate-400 font-bold bg-slate-900 px-1 py-0.2 rounded border border-slate-800">
+                              {evt.method}
+                            </span>
+                          )}
+                          <span className="text-slate-200">{evt.endpoint}</span>
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 truncate">{evt.message}</span>
+                      )}
+                    </td>
+                    <td className="py-2.5 px-3 whitespace-nowrap">
+                      {statusCode !== undefined && statusCode !== null ? (
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded border font-mono font-bold ${
+                          statusCode >= 400
+                            ? 'text-rose-400 border-rose-500/30 bg-rose-950/40'
+                            : 'text-emerald-400 border-emerald-500/30 bg-emerald-950/40'
+                        }`}>
+                          HTTP {statusCode}
+                        </span>
+                      ) : (
+                        <span className="text-slate-500 text-[10px]">-</span>
+                      )}
+                    </td>
+                    <td className="py-2.5 px-3 text-slate-300 max-w-xs truncate text-[11px]">
+                      {targetAttackType ? (
+                        <span className="inline-flex items-center space-x-1 text-amber-400 bg-amber-950/40 border border-amber-500/30 px-1.5 py-0.2 rounded">
+                          <AlertCircle className="w-3 h-3 shrink-0" />
+                          <span>{targetAttackType}</span>
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 truncate">{evt.message || 'Raw Telemetry'}</span>
+                      )}
+                    </td>
+                    <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                      <button
+                        onClick={() => onSelectEvent && onSelectEvent(evt)}
+                        className="inline-flex items-center space-x-1 text-[11px] font-mono text-sky-400 hover:text-sky-300 bg-slate-800/80 hover:bg-slate-800 px-2.5 py-1 rounded border border-slate-700 transition-colors"
+                      >
+                        <Eye className="w-3 h-3" />
+                        <span>Inspect</span>
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

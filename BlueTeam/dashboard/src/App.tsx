@@ -117,8 +117,11 @@ export const App: React.FC = () => {
             totalEvents={totalEvents}
             liveAlerts={liveAlerts}
             isLoadingEvents={isLoadingEvents}
+            apiStatus={apiStatus}
+            wsStatus={wsStatus}
             onSelectEvent={setSelectedEvent}
             onViewAllEvents={() => setActiveTab('events')}
+            onViewValidation={() => setActiveTab('validation')}
             onClearLiveAlerts={handleClearLiveAlerts}
             onRefreshEvents={loadDashboardData}
           />

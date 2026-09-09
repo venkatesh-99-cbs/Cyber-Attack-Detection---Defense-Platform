@@ -13,9 +13,9 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange, 
   const tabs: { id: TabType; label: string; icon: React.ElementType; badge?: string | number }[] = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'events', label: 'Events', icon: Database },
-    { id: 'alerts', label: 'Live Alerts', icon: Bell, badge: liveAlertCount > 0 ? liveAlertCount : undefined },
+    { id: 'alerts', label: 'Alerts', icon: Bell, badge: liveAlertCount > 0 ? liveAlertCount : undefined },
     { id: 'incidents', label: 'Incidents', icon: ShieldAlert },
-    { id: 'validation', label: 'Validation', icon: Cpu, badge: 'RESERVED' },
+    { id: 'validation', label: 'Validation', icon: Cpu, badge: 'ENGINE' },
   ];
 
   return (
@@ -42,7 +42,7 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange, 
                 <span
                   className={`ml-1.5 px-1.5 py-0.2 rounded text-[10px] ${
                     isReserved
-                      ? 'bg-slate-800 text-slate-500 border border-slate-700'
+                      ? 'bg-sky-950 text-sky-400 border border-sky-500/30'
                       : 'bg-amber-950 text-amber-400 border border-amber-500/30'
                   }`}
                 >

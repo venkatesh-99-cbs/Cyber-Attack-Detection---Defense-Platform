@@ -13,13 +13,13 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'md', s
   let colorClasses = 'bg-slate-800/80 text-slate-300 border-slate-700/80';
   let Icon = Info;
 
-  if (normalized === 'SAFE' || normalized === 'OK' || normalized === 'CONNECTED' || normalized === 'RESOLVED') {
+  if (normalized === 'SAFE' || normalized === 'OK' || normalized === 'ONLINE' || normalized === 'CONNECTED' || normalized === 'RESOLVED' || normalized === 'PASS') {
     colorClasses = 'bg-emerald-950/60 text-emerald-400 border-emerald-500/30';
     Icon = ShieldCheck;
   } else if (normalized === 'SUSPICIOUS' || normalized === 'WARNING' || normalized === 'CONNECTING' || normalized === 'INVESTIGATING') {
     colorClasses = 'bg-amber-950/60 text-amber-400 border-amber-500/30';
     Icon = AlertTriangle;
-  } else if (normalized === 'HIGH RISK' || normalized === 'HIGH' || normalized === 'CRITICAL' || normalized === 'ERROR' || normalized === 'OPEN') {
+  } else if (normalized === 'HIGH RISK' || normalized === 'HIGH' || normalized === 'CRITICAL' || normalized === 'ERROR' || normalized === 'OPEN' || normalized === 'OFFLINE' || normalized === 'DISCONNECTED' || normalized === 'FAIL') {
     colorClasses = 'bg-rose-950/60 text-rose-400 border-rose-500/30';
     Icon = ShieldAlert;
   }
