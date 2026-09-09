@@ -20,3 +20,6 @@ env/
 *.sqlite3
 # Local runtime data
 data/
+# Frontend dependencies and build output
+node_modules/
+dist/
