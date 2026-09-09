@@ -13,6 +13,8 @@ from BlueTeam.api.schemas.dashboard import (
 )
 from BlueTeam.database.models.event import SecurityEventModel
 
+from BlueTeam.database.models.lifecycle import AlertRecord, IncidentRecord, DetectionRecord, RiskRecord
+
 router = APIRouter()
 
 
@@ -20,18 +22,21 @@ router = APIRouter()
 def get_dashboard_summary(db: Session = Depends(get_db)):
     """
     Retrieve security summary data for the dashboard.
-
-    - Returns persisted total event count.
-    - Explicitly reports non-persisted status for alerts, incidents, and risk scoring.
     """
     total_events = db.query(func.count(SecurityEventModel.id)).scalar() or 0
+    active_alerts = db.query(func.count(AlertRecord.id)).filter(AlertRecord.status == "ACTIVE").scalar() or 0
+    open_incidents = db.query(func.count(IncidentRecord.id)).filter(IncidentRecord.status == "OPEN").scalar() or 0
+    
+    latest_risk = db.query(RiskRecord).order_by(RiskRecord.id.desc()).first()
+    system_status = latest_risk.risk_level if latest_risk else "SAFE"
 
     return DashboardSummaryResponse(
         total_events=total_events,
         data_availability=DataAvailabilityStatus(),
-        active_alerts_count=None,
-        open_incidents_count=None,
-        system_status=None,
+        active_alerts_count=active_alerts,
+        open_incidents_count=open_incidents,
+        system_status=system_status,
+        system_status_note="Data is now fully persisted.",
     )
 
 
@@ -39,9 +44,6 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
 def get_dashboard_statistics(db: Session = Depends(get_db)):
     """
     Retrieve statistical analytics on persisted security events.
-
-    - Preserves exact event_type terminology from stored SecurityEvent records.
-    - Explicitly reports non-persisted status for detection rule matches.
     """
     total_events = db.query(func.count(SecurityEventModel.id)).scalar() or 0
 
@@ -63,11 +65,14 @@ def get_dashboard_statistics(db: Session = Depends(get_db)):
         TopSourceIP(source_ip=ip, count=count) for ip, count in ip_counts
     ]
 
+    detected_attacks = db.query(func.count(DetectionRecord.id)).filter(DetectionRecord.detected == True).scalar() or 0
+
     return DashboardStatsResponse(
         total_events=total_events,
         events_by_type=events_by_type,
         top_source_ips=top_source_ips,
-        detected_attack_count=None,
+        detected_attack_count=detected_attacks,
+        detected_attack_count_note="Data is now fully persisted.",
         data_availability=DataAvailabilityStatus(),
     )
 

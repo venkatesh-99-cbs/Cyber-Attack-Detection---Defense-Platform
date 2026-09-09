@@ -10,6 +10,7 @@ from BlueTeam.api.schemas.event import (
     EventListResponse,
     SecurityEvent,
     SecurityEventResponse,
+    TargetSecurityEvent,
 )
 from BlueTeam.database.database import SessionLocal
 from BlueTeam.database.models.event import SecurityEventModel
@@ -25,6 +26,55 @@ def get_db() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
+
+
+def normalize_target_event(target_evt: TargetSecurityEvent) -> SecurityEvent:
+    """
+    Normalizes a TargetSecurityEvent payload into the internal SecurityEvent domain schema.
+    """
+    evt_type = target_evt.event_type
+    lower_type = evt_type.lower()
+    lower_path = (target_evt.path or "").lower()
+
+    if lower_type in ("login_failure", "login_failed", "failed_login"):
+        evt_type = "login_failure"
+    elif lower_type in ("connection_attempt", "port_scan"):
+        evt_type = "connection_attempt"
+    elif lower_type == "http_request":
+        if target_evt.status_code == 401 and any(
+            p in lower_path for p in ["/login", "/signin", "/auth"]
+        ):
+            evt_type = "login_failure"
+
+    metadata = {
+        "source": target_evt.source,
+        "params": target_evt.params or {},
+        "session_id": target_evt.session_id,
+        "target_attack_type": target_evt.attack_type,
+        "target_result": target_evt.result,
+        "target_severity": target_evt.severity,
+        "target_reason": target_evt.reason,
+    }
+
+    path_str = target_evt.path or "/"
+    method_str = target_evt.method or "REQ"
+    if target_evt.status_code is not None:
+        message_str = f"Target event: {method_str} {path_str} ({target_evt.status_code})"
+    else:
+        message_str = f"Target event: {method_str} {path_str}"
+
+    return SecurityEvent(
+        event_id=target_evt.event_id,
+        timestamp=target_evt.timestamp,
+        source_ip=target_evt.source_ip,
+        target_ip=target_evt.target_ip,
+        event_type=evt_type,
+        endpoint=target_evt.path,
+        method=target_evt.method,
+        status_code=target_evt.status_code,
+        message=message_str,
+        metadata=metadata,
+    )
 
 
 @router.post("/events", status_code=status.HTTP_201_CREATED)
@@ -53,8 +103,7 @@ async def ingest_event(event: SecurityEvent, db: Session = Depends(get_db)):
     )
     db.add(db_event)
     try:
-        db.commit()
-        db.refresh(db_event)
+        db.flush()
     except IntegrityError:
         db.rollback()
         raise HTTPException(
@@ -64,6 +113,9 @@ async def ingest_event(event: SecurityEvent, db: Session = Depends(get_db)):
 
     # Execute Detection -> Risk -> Alert -> WebSocket pipeline safely
     await default_pipeline_processor.process_and_broadcast(event, db)
+    
+    db.commit()
+    db.refresh(db_event)
 
     return {
         "status": "accepted",
@@ -71,6 +123,24 @@ async def ingest_event(event: SecurityEvent, db: Session = Depends(get_db)):
         "id": db_event.id,
         "received_at": db_event.received_at.isoformat(),
     }
+
+
+@router.post("/api/events", status_code=status.HTTP_201_CREATED)
+async def ingest_target_event(
+    target_event: TargetSecurityEvent, db: Session = Depends(get_db)
+):
+    """
+    Compatibility ingestion endpoint for Target application forwarding to POST /api/events.
+
+    - Validates payload using TargetSecurityEvent schema.
+    - Normalizes payload into SecurityEvent domain schema.
+    - Reuses existing ingestion pipeline (persists event & runs pipeline).
+    - Returns 409 Conflict if event_id already exists.
+    - Returns 201 Created on success.
+    """
+    event = normalize_target_event(target_event)
+    return await ingest_event(event, db)
+
 
 
 @router.get("/events", response_model=EventListResponse)

@@ -1,17 +1,29 @@
-from typing import Any
-from pydantic import BaseModel, Field
+from datetime import datetime
+from pydantic import BaseModel
+
+
+class AlertResponse(BaseModel):
+    alert_id: str
+    event_id: str
+    timestamp: datetime
+    severity: str
+    risk_score: int
+    attack_types: list[str]
+    source_ips: list[str]
+    rule_names: list[str]
+    detection_count: int
+    reasons: list[str]
+    status: str
+    created_at: datetime
 
 
 class AlertListResponse(BaseModel):
     """
-    Response model for GET /alerts reporting non-persisted alert state transparently.
+    Response model for GET /alerts.
     """
+    persisted: bool = True
+    status: str = "OK"
+    message: str = "Alerts are successfully persisted in the database."
+    alerts: list[AlertResponse] | None = None
 
-    persisted: bool = False
-    status: str = "PERSISTENCE_NOT_CONFIGURED"
-    message: str = (
-        "Alerts are generated dynamically in memory and broadcast over WebSocket (/ws), "
-        "but historical alerts are not persisted in SQLite."
-    )
-    alerts: list[dict[str, Any]] | None = None
 

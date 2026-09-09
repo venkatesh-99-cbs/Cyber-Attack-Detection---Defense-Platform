@@ -123,16 +123,14 @@ def test_get_dashboard_summary(client: TestClient):
 
     assert data["total_events"] == 1
     assert data["data_availability"]["events_persisted"] is True
-    assert data["data_availability"]["alerts_persisted"] is False
-    assert data["data_availability"]["incidents_persisted"] is False
-    assert data["data_availability"]["risk_analysis_persisted"] is False
-    assert data["data_availability"]["detection_results_persisted"] is False
+    assert data["data_availability"]["alerts_persisted"] is True
+    assert data["data_availability"]["incidents_persisted"] is True
+    assert data["data_availability"]["risk_analysis_persisted"] is True
+    assert data["data_availability"]["detection_results_persisted"] is True
 
-    # Honest data representation: non-persisted metrics MUST be null/None
-    assert data["active_alerts_count"] is None
-    assert data["open_incidents_count"] is None
-    assert data["system_status"] is None
-    assert "not persisted" in data["system_status_note"].lower()
+    assert data["active_alerts_count"] == 0
+    assert data["open_incidents_count"] == 0
+    assert data["system_status"] == "SAFE"
 
 
 def test_get_dashboard_statistics_terminology_preservation(client: TestClient):
@@ -181,28 +179,25 @@ def test_get_dashboard_statistics_terminology_preservation(client: TestClient):
     assert data["top_source_ips"][0]["count"] == 3
 
     # Honest data representation for attack count
-    assert data["detected_attack_count"] is None
-    assert "not persisted" in data["detected_attack_count_note"].lower()
+    assert data["detected_attack_count"] == 0
 
 
-def test_get_alerts_persistence_not_configured(client: TestClient):
+def test_get_alerts_persisted(client: TestClient):
     res = client.get("/alerts")
     assert res.status_code == 200
     data = res.json()
 
-    assert data["persisted"] is False
-    assert data["status"] == "PERSISTENCE_NOT_CONFIGURED"
-    assert data["alerts"] is None
-    assert "not persisted in SQLite" in data["message"]
+    assert data["persisted"] is True
+    assert data["status"] == "OK"
+    assert data["alerts"] == []
 
 
-def test_get_incidents_persistence_not_configured(client: TestClient):
+def test_get_incidents_persisted(client: TestClient):
     res = client.get("/incidents")
     assert res.status_code == 200
     data = res.json()
 
-    assert data["persisted"] is False
-    assert data["status"] == "PERSISTENCE_NOT_CONFIGURED"
-    assert data["incidents"] is None
-    assert "not persisted in SQLite" in data["message"]
+    assert data["persisted"] is True
+    assert data["status"] == "OK"
+    assert data["incidents"] == []
 

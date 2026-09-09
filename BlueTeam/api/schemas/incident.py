@@ -1,16 +1,30 @@
-from typing import Any
-from pydantic import BaseModel, Field
+from datetime import datetime
+from pydantic import BaseModel
+
+
+class IncidentResponse(BaseModel):
+    incident_id: str
+    alert_id: str
+    event_id: str
+    created_at: datetime
+    updated_at: datetime
+    severity: str
+    risk_score: int
+    attack_types: list[str]
+    source_ips: list[str]
+    rule_names: list[str]
+    detection_count: int
+    reasons: list[str]
+    status: str
 
 
 class IncidentListResponse(BaseModel):
     """
-    Response model for GET /incidents reporting non-persisted incident state transparently.
+    Response model for GET /incidents.
     """
+    persisted: bool = True
+    status: str = "OK"
+    message: str = "Incidents are successfully persisted in the database."
+    incidents: list[IncidentResponse] | None = None
 
-    persisted: bool = False
-    status: str = "PERSISTENCE_NOT_CONFIGURED"
-    message: str = (
-        "Incidents are managed in memory only and historical incidents are not persisted in SQLite."
-    )
-    incidents: list[dict[str, Any]] | None = None
 

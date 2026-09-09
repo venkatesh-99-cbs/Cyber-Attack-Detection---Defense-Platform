@@ -8,10 +8,10 @@ class DataAvailabilityStatus(BaseModel):
     """
 
     events_persisted: bool = True
-    alerts_persisted: bool = False
-    incidents_persisted: bool = False
-    risk_analysis_persisted: bool = False
-    detection_results_persisted: bool = False
+    alerts_persisted: bool = True
+    incidents_persisted: bool = True
+    risk_analysis_persisted: bool = True
+    detection_results_persisted: bool = True
 
 
 class DashboardSummaryResponse(BaseModel):
